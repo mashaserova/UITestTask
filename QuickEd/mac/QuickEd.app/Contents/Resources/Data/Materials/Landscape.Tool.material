@@ -1,0 +1,16 @@
+Material:
+    Layers: [ OpaqueRenderLayer ]
+    Passes:
+        ReflectionRefraction:
+        Forward:
+        DepthOnly:
+            enabled: false
+        ShadowMap:
+            enabled: false
+    Shader: ~res:/Materials/Shaders/Landscape/landscape-editor
+    UniqueDefines: [ TILEMASK ]
+    RenderState:
+        depthFunc: CMP_LESS
+        depthTest: true
+        depthWrite: true
+        cullMode: FACE_BACK

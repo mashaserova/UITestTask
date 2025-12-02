@@ -1,0 +1,41 @@
+Header:
+  version: "2"
+ProjectProperties:
+  ResourceDirectory: "./DataSource/"
+  PluginsDirectory: "./Plugins/"
+  AdditionalResourceDirectory: "./Data/"
+  IntermediateResourceDirectory: "./Data/"
+  UiDirectory: "./UI/"
+  ExcludedUiDirectories:
+   - "./UI/Fonts/"
+  FontsDirectory: "./Fonts/"
+  FontsConfigsDirectory: "./UI/Fonts/" 
+  TextsDirectory: "./Strings/"
+  DataSchemeDirectory: "./DataScheme/"
+  GeneratedDataSchemeDirectory: "./Classes/GeneratedGameModels/"
+  SourceCodeRootDirectory: "./Classes/"
+  InputConfiguration: "~res:/input_configuration.yaml"
+  DefaultLanguage: "ru"
+  GfxDirectories:
+   - directory: "./Gfx/"
+     resolution: [960, 640]
+   - directory: "./Gfx2/"
+     resolution: [1920, 1280]
+  Blanks: 
+   - {name: "Empty", pathToYaml: "~res:/UI/Examples/Blanks/Empty.yaml", control: "Screen", path: ""}
+  Devices:
+   - {name: "iPhone4 ru", screenSize: [960, 640], virtualScreenSize: [960, 640], lang: "ru", rtl: false}
+   - {name: "iPhone4 ar", screenSize: [960, 640], virtualScreenSize: [960, 640], lang: "ar", rtl: true}
+   - {name: "iPad ru", screenSize: [1024, 640], virtualScreenSize: [960, 640], lang: "ru", rtl: false}
+   - {name: "iPad ar", screenSize: [1024, 640], virtualScreenSize: [960, 640], lang: "ar", rtl: true}
+
+  Library:  
+  Locales:
+    ar: 
+        sound: "arb"
+    pt:
+        sound: "pbr"
+    zh-Hans: 
+        sound: "cn"
+    zh-Hant: 
+        sound: "cn"

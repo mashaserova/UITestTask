@@ -1,0 +1,145 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+#include "pbr-utils.slh"
+#include "ibl.slh"
+
+#if RECEIVE_SHADOW
+    #include "shadow-mapping.slh"
+#endif
+
+#if SHADER_ULTRA
+    uniform sampler2D specularBRDF;
+#endif
+
+uniform samplerCUBE specularReflectionMap;
+[auto][a] property float2 mipmapLevel; // x - roughness mip levels
+[auto][a] property float environmentRotation;
+
+uniform samplerCUBE diffuseIrradianceMap;
+
+half3 getPBR(half3 polygonN, half3 N, half3 V, half3 L, half3 lightColor, half lightIntensity, half3 baseColor, half metallic, half roughness, half occlusion, half shadow, half3 emissive)
+{
+    half3 H = normalize(V + L);
+
+    half NdotV = max(dot(N, V), half(0.0001));
+    half NdotL = max(dot(N, L), half(0.0001));
+    half NdotH = saturate(dot(N, H));
+    half HdotV = saturate(dot(H, V));
+
+    half3 R = normalize(half(2.0) * NdotV * N - V);
+
+    #if SHADER_ULTRA
+        R = lerp(N, R, saturate(half(1.35) * (half(1.0) - roughness)));
+        R = R + saturate(-dot(polygonN, R)) * polygonN; // clip light from neagative subspace of polygon
+    #endif
+
+    half3 dielectricDiffuseColor = baseColor;
+    half3 metalDiffuseColor = half(0.0);
+    half3 diffuseColor = half3(lerp(dielectricDiffuseColor, metalDiffuseColor, metallic));
+
+    half3 dielectricF0 = half(0.04);
+    half3 metalF0 = baseColor;
+    half3 F0 = half3(lerp(dielectricF0, metalF0, metallic));
+
+    #if SHADER_ULTRA
+        float3x3 envRotMat = float3x3(float3(cos(2.0 * _PI * environmentRotation), -sin(2.0 * _PI * environmentRotation), 0.0),
+                                      float3(sin(2.0 * _PI * environmentRotation),  cos(2.0 * _PI * environmentRotation), 0.0),
+                                      float3(0.0, 0.0, 1.0));
+        N = half3(mul(float3(N), envRotMat));
+        R = half3(mul(float3(R), envRotMat));
+    #endif
+
+    // IBL
+    half3 diffuseIrradiance = half3(texCUBElod(diffuseIrradianceMap, float3(N), half(0.0)).rgb);
+
+    half lod = MipFromRoughness(roughness, half(mipmapLevel.x));
+    half3 specularReflection = half3(texCUBElod(specularReflectionMap, float3(R), float(lod)).rgb);
+
+    #if SHADER_ULTRA
+        half2 dfg = half2(tex2D(specularBRDF, float2(float(NdotV), float(roughness))).xy);
+        half3 F = F0 * dfg.x + dfg.y;
+    #else
+        half3 F = EnvBRDFApprox(F0, roughness, NdotV);
+    #endif
+
+    half3 diffuseIBL = diffuseIrradiance * diffuseColor;
+    half3 specularIBL = specularReflection * F;
+
+    diffuseIBL *= occlusion;
+    specularIBL *= occlusion;
+
+    // Direct light
+    half3 light0 = lightColor * lightIntensity * NdotL;
+
+    F = half3(F_Schlick(F0, HdotV));
+
+    half3 diffuseDirect = light0 * diffuseColor * half(_INVERSE_PI);
+    half3 specularDirect = light0 * F * half3(Specular(float(NdotH), float(NdotL), float(NdotV), float(roughness)));
+
+    #if VIEW_DIFFUSE
+        diffuseDirect *= shadow;
+    #endif
+    #if VIEW_SPECULAR
+        specularDirect *= shadow;
+    #endif
+
+    half3 result = half3(half(0.0), half(0.0), half(0.0));
+
+    #if EMISSIVE_COLOR || TILED_DECAL_EMISSIVE_COLOR || EMISSIVE_ALBEDO || TILED_DECAL_EMISSIVE_ALBEDO || TILED_DECAL_SPREADING
+        result += emissive;
+    #endif
+    
+    #if VIEW_DIFFUSE
+        result += diffuseDirect;
+    #endif
+
+    #if VIEW_SPECULAR
+        result += specularDirect;
+    #endif
+
+    #if VIEW_AMBIENT
+        result += diffuseIBL + specularIBL;
+    #endif
+
+    return result;
+}
+
+half3 getPointLightPBR(half3 N, half3 V, half3 L, half3 lightColor, half lightIntensity, half3 baseColor, half metallic, half roughness)
+{
+    half3 H = normalize(V + L);
+
+    half NdotV = max(dot(N, V), half(0.0001));
+    half NdotL = max(dot(N, L), half(0.0001));
+    half NdotH = saturate(dot(N, H));
+    half HdotV = saturate(dot(H, V));
+
+    half3 dielectricDiffuseColor = baseColor;
+    half3 metalDiffuseColor = half(0.0);
+    half3 diffuseColor = half3(lerp(dielectricDiffuseColor, metalDiffuseColor, metallic));
+
+    half3 dielectricF0 = half(0.04);
+    half3 metalF0 = baseColor;
+    half3 F0 = half3(lerp(dielectricF0, metalF0, metallic));
+
+    // Direct light
+    half3 light0 = lightColor * lightIntensity * NdotL;
+
+    half3 F = half3(F_Schlick(F0, HdotV)); 
+
+    half3 diffuseDirect = light0 * diffuseColor * half(_INVERSE_PI);
+    half3 specularDirect = light0 * F * half3(Specular(float(NdotH), float(NdotL), float(NdotV), float(roughness)));
+
+    half3 result = half3(half(0.0), half(0.0), half(0.0));
+
+    #if VIEW_DIFFUSE
+        result += diffuseDirect;
+    #endif
+
+    #if VIEW_SPECULAR
+        result += specularDirect;
+    #endif
+
+    return result;
+}

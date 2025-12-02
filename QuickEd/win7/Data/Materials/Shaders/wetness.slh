@@ -1,0 +1,62 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+#ifndef PERLIN_NOISE_DEFINED
+uniform sampler2D perlinNoise;
+#define PERLIN_NOISE_DEFINED 1
+#endif
+
+[material][a] property float4 wetnessHeights = float4(0.8f, 1.2f, 1.6f, 2.0f);
+[material][a] property float4 wetnessStrengths = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+inline half GetWetnessBoundarySample(half4 localPosition)
+{
+    const half2 boundaryTexCoord = localPosition.xy * half(1.2) + localPosition.z * half(0.4);
+    const half boundaryReductionFactor = max(localPosition.w - half(0.9), half(0.0)) * half(10.0);
+
+    half boundarySample = half(FP_A8(tex2D(perlinNoise, float2(boundaryTexCoord))));
+    boundarySample = lerp(boundarySample, boundarySample * half(0.2) + half(0.4), boundaryReductionFactor);
+
+    return boundarySample * half(0.2);
+}
+
+inline half CalculateWetnessStrength(half4 localPosition)
+{
+    const half localHeight = localPosition.z;
+
+    const int currentLevel = int(
+        step(half(wetnessHeights[0]), localHeight) + 
+        step(half(wetnessHeights[1]), localHeight) + 
+        step(half(wetnessHeights[2]), localHeight) + 
+        step(half(wetnessHeights[3]), localHeight));
+
+    const half currentHeight = currentLevel < 4 ? half(wetnessHeights[currentLevel]) : half(99.99);
+
+    const half boundarySample = GetWetnessBoundarySample(localPosition);
+
+    const half boundarySampleWithFadeOut = boundarySample + half(0.05);
+    const half boundaryFactor = smoothstep(currentHeight - boundarySampleWithFadeOut, currentHeight - boundarySample, localHeight);
+
+    const half localHeightForNextLevel = localHeight + boundarySampleWithFadeOut;
+
+    const int nextLevel = int(
+        step(half(wetnessHeights[0]), localHeightForNextLevel) + 
+        step(half(wetnessHeights[1]), localHeightForNextLevel) +
+        step(half(wetnessHeights[2]), localHeightForNextLevel) +
+        step(half(wetnessHeights[3]), localHeightForNextLevel));
+
+    const half currentStrength = currentLevel > 0 ? half(wetnessStrengths[currentLevel - 1]) : half(1.0);
+    half nextStrength = nextLevel > 0 ? half(wetnessStrengths[nextLevel - 1]) : half(1.0);
+
+    half transientStrength = nextStrength;
+    for (int midLevel = nextLevel - 1; midLevel > currentLevel; --midLevel)
+    {
+        half midHeight = half(wetnessHeights[midLevel]);
+        half transientFactor = smoothstep(midHeight - boundarySampleWithFadeOut, midHeight - boundarySample, localHeight);
+        half midStrength = half(wetnessStrengths[midLevel - 1]);
+        transientStrength = lerp(midStrength, transientStrength, transientFactor);
+    }
+
+    return lerp(currentStrength, transientStrength, boundaryFactor);
+}

@@ -1,0 +1,11 @@
+Material:
+    Shader: ~res:/Materials/Shaders/2d/2d
+    UniqueDefines: [ TEXTURED ]
+    RenderState:
+        depthFunc: CMP_LESS
+        blend: true
+    Passes:
+        2d:
+    Presets:
+        Clamp:
+            UniqueDefines: [ CLAMP ]

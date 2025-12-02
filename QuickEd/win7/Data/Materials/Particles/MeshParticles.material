@@ -1,0 +1,31 @@
+Material:
+    Layers: ["TransclucentRenderLayer"]
+    Shader: "~res:/Materials/Shaders/Default/mesh-particle-materials"
+    UniqueDefines: ["ALPHABLEND"]
+    IgnoreDefines: [ USE_SHADOW_MAP ]
+    RenderState:
+        blend: true
+        depthTest: true
+        cullMode: FACE_BACK
+        depthFunc: "CMP_LESS"
+    Passes:
+        Forward:
+        ForwardWithDepthOnly:
+        ReflectionRefraction:
+        DepthOnly:
+            enabled: false
+        GBuffer:
+            enabled: false
+        ShadowMap:
+            enabled: false
+        WaterDeformation:
+            enabled: false
+    Presets:
+        Opaque:
+            RenderState:
+                blend: false
+                depthWrite: true
+        ForegroundEffect:
+            Layers: ["AfterTransclucentRenderLayer"]
+            RenderState:
+                depthTest: false

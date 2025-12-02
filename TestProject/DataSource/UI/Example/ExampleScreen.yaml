@@ -1,0 +1,119 @@
+Header:
+    version: 160
+Prototypes:
+-   class: "UIControl"
+    name: "Screen"
+    size: [1200.000000, 640.000000]
+    children:
+    -   class: "UIControl"
+        name: "Body"
+        size: [32.000000, 32.000000]
+        components:
+            Anchor:
+                hCenterAnchorEnabled: true
+            LinearLayout:
+                orientation: "TopDown"
+            SizePolicy:
+                horizontalPolicy: "PercentOfParent"
+                horizontalMax: 1000.000000
+                verticalPolicy: "PercentOfParent"
+        children:
+        -   class: "UIControl"
+            name: "Bg"
+            size: [960.000000, 640.000000]
+            components:
+                Background:
+                    drawType: "DRAW_FILL"
+                    color: [1.000000, 0.227451, 1.000000, 0.098039]
+                IgnoreLayout: {}
+                SizePolicy:
+                    horizontalPolicy: "PercentOfParent"
+                    verticalPolicy: "PercentOfParent"
+        -   class: "UIControl"
+            name: "Header"
+            size: [32.000000, 32.000000]
+            components:
+                Background:
+                    drawType: "DRAW_FILL"
+                    color: [0.286275, 0.392157, 1.000000, 0.200000]
+                SizePolicy:
+                    horizontalPolicy: "PercentOfParent"
+                    verticalPolicy: "FixedSize"
+                    verticalValue: 48.000000
+        -   class: "UIControl"
+            name: "Content"
+            size: [32.000000, 32.000000]
+            components:
+                SizePolicy:
+                    horizontalPolicy: "PercentOfParent"
+                    verticalPolicy: "PercentOfParent"
+                FlowLayout:
+                    hPadding: "16"
+                    hDynamicPadding: true
+                    hSpacing: 16.000000
+                    vPadding: "16"
+                    vDynamicPadding: true
+                    vSpacing: 16.000000
+            children:
+            -   class: "UIControl"
+                name: "Item"
+                size: [32.000000, 32.000000]
+                components:
+                    Anchor:
+                        vCenterAnchorEnabled: true
+                    SizePolicy:
+                        horizontalPolicy: "PercentOfMaxChild"
+                        verticalPolicy: "PercentOfMaxChild"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"1\""
+            -   class: "UIControl"
+                name: "Item2"
+                size: [32.000000, 32.000000]
+                components:
+                    Anchor:
+                        vCenterAnchorEnabled: true
+                    SizePolicy:
+                        horizontalPolicy: "PercentOfMaxChild"
+                        verticalPolicy: "PercentOfMaxChild"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"2\""
+            -   class: "UIControl"
+                name: "Item3"
+                size: [32.000000, 32.000000]
+                components:
+                    Anchor:
+                        vCenterAnchorEnabled: true
+                    SizePolicy:
+                        horizontalPolicy: "PercentOfMaxChild"
+                        verticalPolicy: "PercentOfMaxChild"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"3\""
+            -   class: "UIControl"
+                name: "Item4"
+                size: [32.000000, 32.000000]
+                components:
+                    Anchor:
+                        vCenterAnchorEnabled: true
+                    SizePolicy:
+                        horizontalPolicy: "PercentOfMaxChild"
+                        verticalPolicy: "PercentOfMaxChild"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"4\""
+    -   class: "UIControl"
+        name: "Bg"
+        size: [960.000000, 640.000000]
+        components:
+            Background:
+                drawType: "DRAW_FILL"
+                color: [1.000000, 1.000000, 1.000000, 0.100000]
+            SizePolicy:
+                horizontalPolicy: "PercentOfParent"
+                verticalPolicy: "PercentOfParent"

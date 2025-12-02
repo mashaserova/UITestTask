@@ -1,0 +1,101 @@
+float2 Hammersley(uint i, float numSamples) {
+    uint bits = i;
+    // Workaround for shitty parser
+    uint a = (0xAAAA << 16) + 0xAAAA;
+    uint b = (0xCCCC << 16) + 0xCCCC;
+    uint c = (0xF0F0 << 16) + 0xF0F0;
+    uint d = (0xFF00 << 16) + 0xFF00;
+    bits = (bits << 16) | (bits >> 16);
+    bits = ((bits & 0x55555555) << 1) | ((bits & a) >> 1);
+    bits = ((bits & 0x33333333) << 2) | ((bits & b) >> 2);
+    bits = ((bits & 0x0F0F0F0F) << 4) | ((bits & c) >> 4);
+    bits = ((bits & 0x00FF00FF) << 8) | ((bits & d) >> 8);
+    return float2(float(i) / numSamples, float(bits) / exp2(32.0));
+}
+
+float VanDerCorpus(uint n, uint base)
+{
+    float invBase = 1.0 / float(base);
+    float denom   = 1.0;
+    float result  = 0.0;
+
+    for(uint i = 0; i < 32; ++i)
+    {
+        if(n > 0)
+        {
+            denom   = fmod(float(n), 2.0);
+            result += denom * invBase;
+            invBase = invBase / 2.0;
+            n       = uint(float(n) / 2.0);
+        }
+    }
+
+    return result;
+}
+
+float2 HammersleyNoBitOps(uint i, uint N)
+{
+    float n = i;
+    float base = 2;
+    float invBase = 1.0 / float(base);
+    float denom   = 1.0;
+    float result  = 0.0;
+
+    for(uint i = 0; i < uint(32); ++i)
+    {
+        if(n > 0)
+        {
+            denom   = fmod(float(n), 2.0);
+            result += denom * invBase;
+            invBase = invBase / 2.0;
+            n       = uint(float(n) / 2.0);
+        }
+    }
+
+    return float2(float(i)/float(N), result);
+}
+
+float3 ImportanceSampleGGX(float2 Xi, float linearRoughness, float3 N)
+{
+    float a = linearRoughness * linearRoughness; //remapping
+
+    // Compute distribution direction
+    float Phi = 2.0 * _PI * Xi.x;
+    float CosTheta = abs(sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y)));
+    float SinTheta = sqrt(1.0 - CosTheta * CosTheta);
+
+    // Convert to spherical direction
+    float3 H;
+    H.x = SinTheta * cos(Phi);
+    H.y = SinTheta * sin(Phi);
+    H.z = CosTheta;
+
+    float3 UpVector = abs(N.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);
+    float3 TangentX = normalize(cross(UpVector, N));
+    float3 TangentY = cross(N, TangentX);
+
+    // Tangent to world space
+    return TangentX * H.x + TangentY * H.y + N * H.z;
+}
+
+float2 randomP(int i, int NUM_SAMPLES)
+{
+    float p = float(i) / float(NUM_SAMPLES);
+
+    return float2(p, frac(cos(p * 23.14069263277926)*12345.6789));
+}
+
+#define REFLECTION_CAPTURE_ROUGHEST_MIP 4.0
+#define REFLECTION_CAPTURE_ROUGHNESS_MIP_SCALE 1.2
+
+half MipFromRoughness(half Roughness, half NumMip)
+{
+	half LevelFrom1x1 = REFLECTION_CAPTURE_ROUGHEST_MIP - REFLECTION_CAPTURE_ROUGHNESS_MIP_SCALE * log2(Roughness);
+	return NumMip - 1.0 - LevelFrom1x1;
+}
+
+half RoughnessFromMip(half Mip, half NumMip)
+{
+	half LevelFrom1x1 = NumMip - 1.0 - Mip;
+	return exp2( ( REFLECTION_CAPTURE_ROUGHEST_MIP - LevelFrom1x1 ) / REFLECTION_CAPTURE_ROUGHNESS_MIP_SCALE );
+}

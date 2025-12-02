@@ -1,0 +1,66 @@
+#if USE_VERTEX_FOG
+    float4 FOG_result;
+
+    float fogDistance = length(FOG_view_position);
+
+    // calculating fog amoung, depending on distance 
+    #if FOG_LINEAR
+        FOG_result.w = (fogDistance - fogStart) / (fogEnd - fogStart);
+    #else
+        FOG_result.w = 1.0 - exp(-fogDensity * fogDistance);
+    #endif
+
+    // calculating view direction in world space, point of view in world space
+    #if USE_FOG_HALFSPACE
+        float3 viewPointWorldSpace = FOG_world_position.xyz;
+        float3 viewDirectionWorldSpace = viewPointWorldSpace - FOG_eye_position;
+    #endif
+
+    // calculating halfSpaceFog amoung
+    #if USE_FOG_HALFSPACE
+        #if FOG_HALFSPACE_LINEAR
+            // view http://www.terathon.com/lengyel/Lengyel-UnifiedFog.pdf
+            // to get more clear understanding about this calculations
+            half fogK = step(half(FOG_eye_position.z), half(fogHalfspaceHeight));
+            half fogFdotP = half(viewPointWorldSpace.z) - half(fogHalfspaceHeight);
+            half fogFdotC = half(FOG_eye_position.z) - half(fogHalfspaceHeight);
+            float fogC1 = float(fogK * (fogFdotP + fogFdotC));
+            float fogC2 = float(min((1.0 - 2.0 * fogK) * fogFdotP, 0.0));
+
+            // precision warning
+            float fogG = -length(viewDirectionWorldSpace) * fogHalfspaceDensity * (fogC1 - fogC2 * fogC2 / abs(viewDirectionWorldSpace.z));
+            float halfSpaceFogAmoung = 1.0 - exp2(-fogG);
+        #else
+            float fogK = viewDirectionWorldSpace.z / fogDistance;
+            float fogB = FOG_eye_position.z - fogHalfspaceHeight;
+
+            // using half precision in this expression lead to visual artifacts
+            float halfSpaceFogAmoung = fogHalfspaceDensity * exp(-fogHalfspaceFalloff * fogB) * (1.0 - exp(-fogHalfspaceFalloff * fogK * fogDistance)) / fogK;
+        #endif
+
+        FOG_result.w += clamp(halfSpaceFogAmoung, 0.0, fogHalfspaceLimit); // * float(renderTargetId != 1.0) <- do not apply in refraction pass
+    #endif
+
+    // limit fog amoung
+    FOG_result.w = clamp(FOG_result.w, 0.0, fogLimit);
+
+    // calculating fog color
+    #if FOG_ATMOSPHERE
+        half3 atmosphereColor;
+        #if ENABLE_HIGH_QUALITY_FOG
+            half atmospheteAngleFactor = half(dot(FOG_view_position, FOG_to_light_dir) / (fogDistance * length(FOG_to_light_dir) + 0.001)) * 0.5 + 0.5;
+            atmosphereColor = lerp(half3(fogAtmosphereColorSky), half3(fogAtmosphereColorSun), pow(atmospheteAngleFactor, half(fogAtmosphereScattering)));
+        #else
+            atmosphereColor = half3(fogAtmosphereColorSky);
+        #endif
+
+        #if ENABLE_HIGH_QUALITY_FOG
+            half fogAtmosphereAttenuation = half(clamp(fogDistance / fogAtmosphereDistance, 0.0, 1.0));
+            FOG_result.xyz = lerp(fogColor, float3(atmosphereColor), float(fogAtmosphereAttenuation) );
+        #else
+            FOG_result.xyz = float3(atmosphereColor);
+        #endif
+    #else
+        FOG_result.xyz = fogColor;
+    #endif
+#endif

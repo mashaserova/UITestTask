@@ -1,0 +1,33 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+try_enable
+{
+    retrieve_frag_depth
+}
+
+#if DEPTH_PREPASS_ENABLED
+    uniform sampler2D dynamicDepthPrepass;
+#endif
+
+[auto][a] property float4x4 invProjMatrix;
+[auto][a] property float4x4 invViewProjMatrix;
+#if DEPTH_PREPASS_ENABLED
+    [auto][a] property float2 viewportSize;
+    [auto][a] property float2 viewportOffset;
+    [auto][a] property float2 renderTargetSize;
+#endif
+
+inline float FetchDepth(float4 projectedPosition)
+{
+    #if DEPTH_PREPASS_ENABLED
+        float2 depthSampleUv = projectedPosition.xy * ndcToUvMapping.xy + ndcToUvMapping.zw;
+        depthSampleUv = (depthSampleUv * viewportSize + centerPixelMapping + viewportOffset) / renderTargetSize;
+        return (tex2D(dynamicDepthPrepass, depthSampleUv).x - ndcToZMappingOffset) / ndcToZMappingScale;
+    #elif (FEATURE_ENABLED_ARM_DEPTH_STENCIL_FETCH || FEATURE_ENABLED_METAL_COLOR_FETCH)
+        return (fetchedDepthValue - ndcToZMappingOffset) / ndcToZMappingScale;
+    #else
+        return 1.0;
+    #endif
+}

@@ -1,0 +1,241 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+uniform sampler2DArrayShadow dynamicShadowMap;
+
+#if (SHADOW_PCF > 0)
+    uniform sampler2D blueNoise64x64;
+    [auto][a] property float2 viewportSize;
+#endif
+
+[auto][a] property float4x4 shadowViewMatrix;
+[auto][a] property float4x4 shadowMapProjectionScale;
+[auto][a] property float4x4 shadowMapProjectionOffset;
+
+[auto][a] property float4 shadowConstantDepthBias;
+[auto][a] property float4 shadowSlopeDepthBias;
+[auto][a] property float shadowNormalSlopeOffset;
+[auto][a] property float4 shadowFilterRadius;
+
+[auto][a] property float2 shadowMapSize;
+[auto][a] property float4 shadowMapShadowColor;
+[auto][a] property float4x4 shadowMapProjectionScale;
+[auto][a] property float4x4 shadowMapProjectionOffset;
+[auto][a] property float4 shadowBlendCascadesOut;
+[auto][a] property float2 shadowCutoffSlope;
+[auto][a] property float shadowLitNormalScale;
+[auto][a] property float3 shadowLitDiffuseSpecAmbientMult;
+[auto][a] property float4 shadowLMGateFactor;
+
+half ComputeCascadesBlendValue(half3 projPos, half3 blendSizeIn)
+{
+    half3 center = half3(0.5, 0.5, 0.5);
+    half3 size = half3(0.5, 0.5, 0.5);
+
+    half3 s = max(0.0, abs(projPos - center) - (size - blendSizeIn)) / (blendSizeIn);
+    return max(s.x, max(s.y, s.z));
+}
+
+__forceinline half4 getCascadedShadow(float4 worldPosIn, float3 shadowPos, half4 projPosIn, half3 worldNormalIn, half NdotLIn)
+{
+    half shadow = 1.0;
+    half shadowValue = 1.0;
+    half outBlend = 1.0;
+
+    bool cascade0 = true;
+    bool cascade1 = false;
+    bool cascade2 = false;
+    half cascadesBlend;
+
+    if (NdotLIn >= 0.0)
+    {
+        half slopeFactor = saturate(1.0 - NdotLIn);
+
+        half3 scaledNormalOffset = worldNormalIn * half(shadowNormalSlopeOffset) * slopeFactor;
+
+        #if (SHADOW_PCF > 0)
+            float4 shadowViewPos4 = mul(float4(worldPosIn.xyz + float3(scaledNormalOffset), 1.0), shadowViewMatrix);
+            float3 shadowViewPos = shadowViewPos4.xyz;
+        #endif
+
+        float3 shadowPos0 = shadowPos;
+        shadowPos0.z += shadowConstantDepthBias[0] + shadowSlopeDepthBias[0] * float(slopeFactor);
+        float3 projPos0 = shadowPos0 * shadowMapProjectionScale[0].xyz + shadowMapProjectionOffset[0].xyz;
+        #if SHADOW_CASCADES_COUNT > 1
+            float3 shadowPos1 = shadowPos;
+            shadowPos1.z += shadowConstantDepthBias[1] + shadowSlopeDepthBias[1] * float(slopeFactor);
+            float3 projPos1 = shadowPos1 * shadowMapProjectionScale[1].xyz + shadowMapProjectionOffset[1].xyz;
+        #endif
+        #if SHADOW_CASCADES_COUNT > 2
+            float3 shadowPos2 = shadowPos;
+            shadowPos2.z += shadowConstantDepthBias[2] + shadowSlopeDepthBias[2] * float(slopeFactor);
+            float3 projPos2 = shadowPos2 * shadowMapProjectionScale[2].xyz + shadowMapProjectionOffset[2].xyz;
+        #endif
+
+        half3 shadowVec = half3(0.0, 0.0, 0.0);
+        shadowVec[0] = half(tex2DarrayCmp(dynamicShadowMap, projPos0.xy, float(0), projPos0.z));
+        #if SHADOW_CASCADES_COUNT > 1
+            shadowVec[1] = half(tex2DarrayCmp(dynamicShadowMap, projPos1.xy, float(1), projPos1.z));
+        #endif
+        #if SHADOW_CASCADES_COUNT > 2
+            shadowVec[2] = half(tex2DarrayCmp(dynamicShadowMap, projPos2.xy, float(2), projPos2.z));
+        #endif
+
+        int cascade = -1;
+        int nextCascade = -1;
+        int lastCascade = 0;
+
+        cascade0 = all(equal(saturate(projPos0), projPos0));
+    
+        #if SHADOW_CASCADES_COUNT > 1
+            cascade1 = all(equal(saturate(projPos1), projPos1));
+        #endif
+        #if SHADOW_CASCADES_COUNT > 2
+            cascade2 = all(equal(saturate(projPos2), projPos2));
+        #endif
+
+        float cascadeF = -1.0;
+        #if SHADOW_CASCADES_COUNT > 2
+            cascadeF = lerp(cascadeF, 2.0, float(cascade2));
+        #endif
+
+        #if SHADOW_CASCADES_COUNT > 1
+            cascadeF = lerp(cascadeF, 1.0, float(cascade1));
+        #endif
+
+        cascadeF = lerp(cascadeF, 0.0, float(cascade0));
+
+        cascade = int(cascadeF);
+        nextCascade = int(min(cascadeF + 1.0, float(SHADOW_CASCADES_COUNT) - 1.0));
+        lastCascade = 1 - nextCascade + cascade;
+
+        half3 cscBlend = half3(0.0, 0.0, 0.0);
+    
+        if (cascade >= 0)
+        {
+            shadow = 0.0f;
+            float3 currentProjScale = shadowMapProjectionScale[cascade].xyz;
+            float3 currentProjOffset = shadowMapProjectionOffset[cascade].xyz;
+
+            half blendSize = half(shadowBlendCascadesOut[lastCascade]);
+
+            cscBlend[0] = ComputeCascadesBlendValue(half3(projPos0), abs(half3(shadowMapProjectionScale[0].xyz)) * blendSize);
+            #if SHADOW_CASCADES_COUNT > 1
+                cscBlend[1] = ComputeCascadesBlendValue(half3(projPos1), abs(half3(shadowMapProjectionScale[1].xyz)) * blendSize);
+            #endif
+            #if SHADOW_CASCADES_COUNT > 2
+                cscBlend[2] = ComputeCascadesBlendValue(half3(projPos2), abs(half3(shadowMapProjectionScale[2].xyz)) * blendSize);
+            #endif
+
+            cascadesBlend = cscBlend[cascade];
+            outBlend = cascadesBlend * half(lastCascade);
+
+            #if (SHADOW_PCF > 0)
+                half2 screenSpaceCoords = half2(projPosIn.xy / projPosIn.w) * half2(ndcToUvMapping.xy) + half2(ndcToUvMapping.zw);
+            
+                half2 poissonDistribution[8];
+                poissonDistribution[0] = half2(+0.95581, -0.18159);
+                poissonDistribution[1] = half2(+0.50147, -0.35807);
+                poissonDistribution[2] = half2(+0.69607, +0.35559);
+                poissonDistribution[3] = half2(-0.00368, -0.59150);
+                poissonDistribution[4] = half2(+0.15930, +0.08975);
+                poissonDistribution[5] = half2(-0.65030, +0.05818);
+                poissonDistribution[6] = half2(+0.11915, +0.78449);
+                poissonDistribution[7] = half2(-0.34296, +0.51575);
+
+                half3 rotationKernel = half3(tex2D(blueNoise64x64, float2(screenSpaceCoords) * viewportSize / 64.0).xyz);
+                half jitteredCascadesBlend = half(cascadesBlend > rotationKernel.z);
+                rotationKernel = rotationKernel * 2.0 - 1.0;
+            
+                int jitteredCascade = jitteredCascadesBlend > 0.5f ? nextCascade : cascade;
+                float3 po = shadowMapProjectionOffset[jitteredCascade].xyz;
+                float3 ps = shadowMapProjectionScale[jitteredCascade].xyz;
+            
+                shadowViewPos.z += shadowConstantDepthBias[jitteredCascade] + shadowSlopeDepthBias[jitteredCascade] * float(slopeFactor);
+                float3 projPos = shadowViewPos * ps + po;
+            
+                half tsRadius = half(shadowFilterRadius[jitteredCascade]) / half(shadowMapSize.x);
+                half cosTheta = rotationKernel.x;
+                half sinTheta = rotationKernel.y;
+
+                cosTheta *= tsRadius;
+                sinTheta *= tsRadius;
+
+                half2 r0 = half2(cosTheta, -sinTheta);
+                half2 r1 = half2(sinTheta, cosTheta);
+                float3 projectedCoords;
+                for (int i = 0; i < SHADOW_PCF; ++i)
+                {
+                    projectedCoords = projPos;
+                    projectedCoords.x += dot(poissonDistribution[i].xy, r0);
+                    projectedCoords.y += dot(poissonDistribution[i].xy, r1);
+
+                    shadow += half(tex2DarrayCmp(dynamicShadowMap, projectedCoords.xy, float(jitteredCascade), projectedCoords.z));
+                }
+                shadow *= 1.0 / half(SHADOW_PCF);
+            #else
+                #if SHADOW_CASCADES_BLEND
+                    half shSample1 = shadowVec[cascade];
+                    half shSample2 = shadowVec[nextCascade];
+                    shadow = lerp(shSample1, shSample2, cascadesBlend);
+                #else
+                    shadow = shadowVec[cascade];
+                #endif
+            #endif
+        }
+
+        half slopeCutoff = saturate(half(half(shadowCutoffSlope.y) - slopeFactor) / (half(shadowCutoffSlope.y) - half(shadowCutoffSlope.x)));
+        shadowValue = saturate(shadow * slopeCutoff + outBlend);
+    }
+    
+    #if DEBUG_SHADOW_CASCADES
+        half activeCascadeDebug = 5.0;
+        if (cascade0) { activeCascadeDebug = cascadesBlend; }
+        #if SHADOW_CASCADES_COUNT > 1
+            else if (cascade1) { activeCascadeDebug = 1.0f + cascadesBlend; }
+        #endif
+        #if SHADOW_CASCADES_COUNT > 2
+            else if (cascade2) { activeCascadeDebug = 2.0f + cascadesBlend; }
+        #endif
+        
+        return half4(shadowValue, activeCascadeDebug, 1.0 - outBlend, 1.0);
+    #else
+        return half4(shadowValue, 0.0, 1.0 - outBlend, shadow);
+    #endif
+}
+
+__forceinline half3 getShadowColor(half4 shadowInfoIn)
+{
+    #if DEBUG_SHADOW_CASCADES
+        half3 debugCascadeColor = half3(0.0, 0.0, 0.0);
+        half blendVal = frac(shadowInfoIn.y);
+        if (shadowInfoIn.y < 1.0f)
+        {
+            debugCascadeColor.r = 5.0 * (1.0 - blendVal);
+            debugCascadeColor.g = blendVal * 5.0;
+        }
+        else if (shadowInfoIn.y < 2.0f)
+        {
+            debugCascadeColor.g = 5.0 * (1.0 - blendVal);
+            debugCascadeColor.b = blendVal * 5.0;
+        }
+        else if (shadowInfoIn.y < 3.0f) { debugCascadeColor.b = 5.0; }
+
+        debugCascadeColor *= shadowInfoIn.z;
+        return debugCascadeColor;
+    #else
+        return lerp(half3(shadowMapShadowColor.rgb), half3(1.0, 1.0, 1.0), shadowInfoIn.x);
+    #endif
+}
+
+__forceinline half3 getShadowColorMultLM(half4 shadowInfoIn, half lmValueIn)
+{
+    #if DEBUG_SHADOW_CASCADES
+        half3 result;
+        result = getShadowColor(shadowInfoIn);
+        return result;
+    #else
+        return lerp(half3(shadowMapShadowColor.rgb) * lmValueIn, half3(1.0, 1.0, 1.0), shadowInfoIn.x);
+    #endif
+}

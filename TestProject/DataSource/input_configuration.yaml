@@ -1,0 +1,25 @@
+actions:
+  - action: Perform
+    shortcut: "Enter"
+
+  - action: Escape
+    shortcut: "Escape"
+
+  - action: BasePrevious
+    shortcut: "Shift+Tab"
+
+  - action: BaseNext
+    shortcut: "Tab"
+
+  - action: ActionLeft
+    shortcut: "Left"
+
+  - action: ActionRight
+    shortcut: "Right"
+
+  - action: ActionUp
+    shortcut: "Up"
+
+  - action: ActionDown
+    shortcut: "Down"
+

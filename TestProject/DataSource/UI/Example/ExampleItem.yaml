@@ -1,0 +1,43 @@
+Header:
+    version: 160
+Prototypes:
+-   class: "UIControl"
+    name: "Item"
+    size: [32.000000, 32.000000]
+    components:
+        SizePolicy:
+            horizontalPolicy: "FixedSize"
+            horizontalValue: 160.000000
+            verticalPolicy: "FixedSize"
+            verticalValue: 200.000000
+        UIDataParamsComponent:
+            params:
+            - ["string", "name", "\"\"", "\"123\""]
+    children:
+    -   class: "UIControl"
+        name: "Bg"
+        size: [32.000000, 32.000000]
+        components:
+            Background:
+                drawType: "DRAW_FILL"
+                color: [0.478431, 1.000000, 0.333333, 0.300000]
+            SizePolicy:
+                horizontalPolicy: "PercentOfParent"
+                verticalPolicy: "PercentOfParent"
+    -   class: "UIControl"
+        name: "Name"
+        size: [32.000000, 32.000000]
+        components:
+            UITextComponent:
+                fontPath: "~res:/UI/Fonts/HelveticaNeueWorld-75Bold.ttf"
+                fontSize: 24.000000
+                lineHeight: 24.000000
+                baseLine: 3.000000
+            Anchor:
+                hCenterAnchorEnabled: true
+                vCenterAnchorEnabled: true
+            SizePolicy:
+                horizontalPolicy: "PercentOfContent"
+                verticalPolicy: "PercentOfContent"
+        bindings:
+        - ["UITextComponent.text", "name"]

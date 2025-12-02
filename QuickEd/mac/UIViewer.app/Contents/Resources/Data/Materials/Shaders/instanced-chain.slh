@@ -1,0 +1,46 @@
+#define CHAIN_POINTS_ARRAY_SIZE 32 // x2 number of elements
+#define SEGMENTS_ARRAY_SIZE 16 // CHAIN_POINTS_ARRAY_SIZE / 2, x4 number of elements
+
+[material][a] property float2 chunkOffset = float2(0.0f);
+[material][a] property float chunkLength = 1.0f;
+[material][a] property float chainPointCount = 1.0f;
+[material][cp] property float4 chainPoints[CHAIN_POINTS_ARRAY_SIZE] : "bigarray"; // float2 actually
+
+#if NEED_CHAIN_TEXCOORD_OFFSETS
+[material][ct] property float4 chainTexCoordOffsets[SEGMENTS_ARRAY_SIZE] : "bigarray"; // float actually
+
+__forceinline float GetTexCoordOffset(uint index)
+{
+    index = index - index / uint(chainPointCount) * uint(chainPointCount);
+
+    const uint arrayIndex = index / uint(4);
+    const uint componentOffset = (index - arrayIndex * uint(4));
+
+    return chainTexCoordOffsets[arrayIndex][componentOffset];
+}
+#endif
+
+__forceinline float2 GetChainPoint(uint index)
+{
+    index = index - index / uint(chainPointCount) * uint(chainPointCount);
+
+    const uint arrayIndex = index / uint(2);
+    const uint componentOffset = (index - arrayIndex * uint(2)) * uint(2);
+
+    return float2(chainPoints[arrayIndex][componentOffset], chainPoints[arrayIndex][componentOffset + 1]);
+}
+
+inline float CalculateModificationFactor(float2 a, float2 b)
+{
+    const float3 c = cross(float3(a, 0.0f), float3(b, 0.0f));
+    return sign(c.z) * length(c) / dot(a, b); // tg between a, b
+}
+
+inline float2 Rotate(float2 value, float sinAlpha, float cosAlpha)
+{
+    const float tempX = value.x;
+    value.x = tempX * cosAlpha - value.y * sinAlpha;
+    value.y = tempX * sinAlpha + value.y * cosAlpha;
+
+    return value;
+}

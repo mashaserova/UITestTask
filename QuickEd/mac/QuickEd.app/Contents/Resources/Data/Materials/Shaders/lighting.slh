@@ -1,0 +1,31 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+inline float3 ApplyLight(float4 lightPositionRadius, float4 colorFalloff, float3 positionVS_, float3 normalVS_)
+{
+    float3 directionToLight = lightPositionRadius.xyz - positionVS_;
+
+    // minimum point light size = 0.01
+    float distanceToLight = max(0.01, length(directionToLight));
+
+    // edge scale - fade to zero from 95%
+    float smoothEdgeScale = (1.0 - smoothstep(lightPositionRadius.w * 0.95, lightPositionRadius.w, distanceToLight));
+    float attenuation = 4.0 * _PI / pow(distanceToLight, colorFalloff.w);
+
+    // thread negative values (less than -0.001) in color as occlusion - in this case occlusion will not depend on angle
+    float minColorValue = min(colorFalloff.x, min(colorFalloff.y, colorFalloff.z));
+    float usedAsOcclusion = step(minColorValue, -0.001) * 2.0;
+    float angleCosine = saturate(usedAsOcclusion + dot(directionToLight, normalVS_) / distanceToLight);
+
+    return colorFalloff.xyz * (smoothEdgeScale * attenuation * angleCosine);
+}
+
+inline float BlinnPhong(float aNdotH, float aGlossiness, float aSpecCutoff)
+{   
+    float glossPower = pow(5000.0, aGlossiness);
+    float specularNorm = (glossPower + 2.0) / 8.0;
+    float specTerm = pow(aNdotH, glossPower) * specularNorm * aSpecCutoff;
+    
+    return specTerm;
+}

@@ -1,0 +1,27 @@
+Material:
+    Layers: [ AfterTransclucentRenderLayer ]
+    Shader: ~res:/Materials/Shaders/Silhouette/silhouette
+    ConsiderOnlyDefines: [ HARD_SKINNING, VIEW_MODE_OVERDRAW_HEAT ]
+    RenderState:
+        depthFunc: CMP_LESS
+        depthWrite: true
+    Stencil:
+        enabled: true
+        failBack: STENCILOP_KEEP
+        failFront: STENCILOP_KEEP
+        funcBack: CMP_NOTEQUAL
+        funcFront: CMP_NOTEQUAL
+        mask: 64
+        passBack: STENCILOP_KEEP
+        passFront: STENCILOP_KEEP
+        ref: 64
+        zFailBack: STENCILOP_KEEP
+        zFailFront: STENCILOP_KEEP
+    Passes:
+        Forward:
+        ReflectionRefraction:
+            enabled: false
+        DepthOnly:
+            enabled: false
+        ShadowMap:
+            enabled: false

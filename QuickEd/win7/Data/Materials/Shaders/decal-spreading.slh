@@ -1,0 +1,69 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+#ifndef PERLIN_NOISE_DEFINED
+uniform sampler2D perlinNoise;
+#define PERLIN_NOISE_DEFINED 1
+#endif
+
+[material][a] property float spreadingProgress = 0.5;
+[material][a] property float3 spreadingBorderColor = float3(1.0, 0.0, 0.0);
+
+[material][a] property float spreadingBorderSize = 0.1;
+[material][a] property float spreadingNoiseSize = 0.5;
+
+[material][a] property float spreadingStart = 0.5;
+[material][a] property float spreadingAxis = 1.0;
+
+[material][a] property float3 localBBoxMin = float3(0.0, 0.0, 0.0);
+[material][a] property float3 localBBoxMax = float3(1.0, 1.0, 1.0);
+
+half GetNoiseBasedSpreading(half progress, float2 uv)
+{
+    half noiseSample = half(FP_A8(tex2D(perlinNoise, uv)));
+
+    half borderHalf = half(spreadingBorderSize) * half(0.5);
+
+    progress = progress * (half(spreadingBorderSize) + half(1.0)) - borderHalf;
+
+    half result = smoothstep(noiseSample - borderHalf, noiseSample + borderHalf, progress);
+
+    return result;
+}
+
+half GetSpatialBasedSpreading(half progress, half3 localPos)
+{
+    int axis = int(spreadingAxis);
+
+    half3 localBBoxSize = half3(localBBoxMax) - half3(localBBoxMin);
+    
+    half borderSize = half(spreadingBorderSize) / localBBoxSize[axis];
+    half borderHalf = borderSize * half(0.5);
+
+    half noiseSize = half(spreadingNoiseSize) / localBBoxSize[axis];
+    half noiseHalf = noiseSize * half(0.5);
+
+    half3 relativePos = (localPos - half3(localBBoxMin)) / localBBoxSize;
+    
+    int componentU = axis < 2 ? (axis + 1) : 0;
+    int componentV = axis > 0 ? (axis - 1) : 2;
+
+    half2 noiseTexCoord = half2(localPos[componentU], localPos[componentV]);
+    noiseTexCoord = noiseTexCoord + progress * half(2.0);
+
+    half noiseSample = half(FP_A8(tex2D(perlinNoise, float2(noiseTexCoord))));
+
+    half start = saturate(half(spreadingStart));
+    half size = max(start, half(1.0) - start);
+
+    half extendSize = borderSize + noiseSize;
+    half extendHalf = extendSize * half(0.5);
+
+    half result = abs(start - relativePos[axis]) / size;
+    result -= (noiseSample * half(2.0) - half(1.0)) * noiseHalf;
+    result = result / (half(1.0) + extendSize) + extendHalf;
+    result = smoothstep(result - borderHalf, result + borderHalf, progress);
+
+    return result;
+}

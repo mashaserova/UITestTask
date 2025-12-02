@@ -1,0 +1,3 @@
+#if VIEW_MODE_OVERDRAW_HEAT
+    output.color = float4(0.1f, 0.0f, 0.0f, 0.0f);
+#endif

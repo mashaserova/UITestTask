@@ -1,0 +1,20 @@
+Material:
+    Layers: [ WaterRenderLayer ]
+    Shader: ~res:/Materials/Shaders/Default/water
+    UniqueDefines: [ PIXEL_LIT, REAL_REFLECTION, REAL_REFRACTION ]
+    RenderState:
+        depthTest: true
+        depthWrite: true
+        cullMode: FACE_BACK
+        depthFunc: CMP_LESS
+    Passes:
+        Forward:
+        ReflectionRefraction:
+            enabled: false
+        DepthOnly:
+            enabled: false
+        ShadowMap:
+            enabled: false
+    Presets:
+        DebugColorUnlit:
+            UniqueDefines: [ DEBUG_UNLIT ]

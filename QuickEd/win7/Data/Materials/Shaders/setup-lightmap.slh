@@ -1,0 +1,14 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+inline half3 SetupLightmap(float2 aLMTexCoord, float aLightmapSize)
+{
+    half3 lightGray = float3(0.75, 0.75, 0.75);
+    half3 darkGray = float3(0.25, 0.25, 0.25);
+
+    bool isXodd = (frac(aLMTexCoord.x * aLightmapSize * 0.5) < 0.5);
+    bool isYodd = (frac(aLMTexCoord.y * aLightmapSize * 0.5) < 0.5);
+    
+    return lerp(darkGray, lightGray, float(isXodd == isYodd));
+}

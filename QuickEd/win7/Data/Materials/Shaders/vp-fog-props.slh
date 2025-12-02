@@ -1,0 +1,35 @@
+#if USE_VERTEX_FOG
+
+    // see details in vp-fog-math.slh
+    // [auto][a] property float waterLevel;
+    
+    [material][fog] property float3 fogColor = float3(1.0,0.0,0.0) ;
+    [material][fog] property float  fogLimit = 1.0 ;
+    
+    #if FOG_LINEAR
+    
+        [material][fog] property float fogStart = 10.0 ;
+        [material][fog] property float fogEnd   = 100.0 ;
+    
+    #else
+    
+        [material][fog] property float fogDensity = 1.0 ;
+    
+    #endif
+    
+
+    #if FOG_ATMOSPHERE
+        [material][fog] property float fogAtmosphereDistance = 100.0 ;
+        [material][fog] property float3 fogAtmosphereColorSun   = float3(0.0,1.0,0.0) ;
+        [material][fog] property float3 fogAtmosphereColorSky   = float3(0.0,0.0,1.0) ;
+        [material][fog] property float  fogAtmosphereScattering = 0.5 ;
+    #endif
+
+    #if USE_FOG_HALFSPACE
+        [material][fog] property float fogHalfspaceHeight   = 10.0 ;
+        [material][fog] property float fogHalfspaceFalloff  = 1.0 ;
+        [material][fog] property float fogHalfspaceDensity  = 1.0 ;
+        [material][fog] property float fogHalfspaceLimit    = 1.0 ;
+    #endif
+
+#endif

@@ -1,0 +1,5 @@
+type: "ft"
+fontPath: "~res:/Fonts/CoreSans.ttf"
+verticalSpacing: 6
+ascendScale: 1.00f
+descendScale: 1.00f

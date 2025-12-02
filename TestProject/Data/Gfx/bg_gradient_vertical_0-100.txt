@@ -1,0 +1,5 @@
+1
+bg_gradient_vertical_0-1000.tex
+1 99
+1
+0 0 1 99 0 0 0 

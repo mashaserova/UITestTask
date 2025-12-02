@@ -1,0 +1,16 @@
+Material:
+    Layers: [ TransclucentRenderLayer ]
+    Passes:
+        ReflectionRefraction:
+        Forward:
+        DepthOnly:
+            enabled: false
+        ShadowMap:
+            enabled: false
+    Shader: ~res:/Materials/Shaders/Default/materials
+    UniqueDefines: [ MATERIAL_TEXTURE, ALPHABLEND ]
+    RenderState:
+        depthFunc: CMP_LEQUAL
+        blend: true
+        cullMode: FACE_BACK
+        depthTest: true

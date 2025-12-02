@@ -1,0 +1,39 @@
+half SRGBToLinear(half srgb)
+{
+#if SHADER_ULTRA
+    half lin = half(0.0);
+
+    if(srgb <= half(0.0404482362771082))
+    {
+        lin = srgb / half(12.92);
+    }
+    else
+    {
+        lin = pow((srgb + half(0.055)) / half(1.055), half(2.4));
+    }
+
+    return lin;
+#else
+    return pow(srgb, half(2.2));
+#endif
+}
+
+half LinearToSRGB(half lin)
+{
+#if SHADER_ULTRA
+    half srgb = half(0.0);
+
+    if (lin > half(0.0031308))
+    {
+        srgb = half(1.055) * pow(lin, half(1.0 / 2.4)) - half(0.055);
+    }
+    else 
+    {
+        srgb = half(12.92) * lin;
+    }
+
+    return srgb;
+#else
+    return pow(lin, half(1.0 / 2.2));
+#endif
+}

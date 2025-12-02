@@ -1,0 +1,94 @@
+float4 worldPosition;
+#if INSTANCED_CHAIN
+    #define DIR_BLENDING_EPS 0.001
+    float segmentLength;
+    float2 segmentDirection;
+#endif
+#if NEEDS_LOCAL_POSITION
+    float3 localPosition;
+#endif
+#if WIND_ANIMATION
+{
+    float3 windVectorFlex = float3(windOscillationParams * input.flexibility, 0.0);
+    float4 distrotedPosition = float4(input.position.xyz + windVectorFlex, 1.0);
+    worldPosition = mul(distrotedPosition, worldMatrix);
+}
+#else
+{
+    #if WAVE_ANIMATION
+    {
+        float4 distrotedPosition = Wave(globalTime, float4(input.position.xyz, 1.0), input.texcoord0);
+        worldPosition = mul(distrotedPosition, worldMatrix);
+    }
+    #else
+    {
+        float4 objectPosition;
+        #if SOFT_SKINNING
+            objectPosition = SoftSkinnedPosition(input.position.xyz, input.indices, input.weights);
+        #elif HARD_SKINNING
+            objectPosition = HardSkinnedPosition(input.position.xyz, input.index);
+        #else
+            objectPosition = float4(input.position.xyz, 1.0);
+        #endif
+        
+        #if USE_VERTEX_DISPLACEMENT
+        
+            float2 displacementUv = input.texcoord1 * vertexDisplacementMapUVOffsetScale.zw + vertexDisplacementMapUVSpeed * globalTime + vertexDisplacementMapUVOffsetScale.xy;
+            float displacementMapFetch = tex2Dlod(vertexDisplacementMap, displacementUv, 0.0).r;
+            
+            objectPosition.xyz += input.normal * displacementMapFetch * vertexDisplacementScale * input.color0.r;
+        #endif
+
+        #if VERTEX_VERTICAL_OFFSET
+            objectPosition.z += verticalOffset * input.offsetWeight;
+        #endif
+
+        #if INSTANCED_CHAIN
+            objectPosition.yz += chunkOffset;
+
+            const float2 p0 = GetChainPoint(instanceId + 1);
+            const float2 p1 = GetChainPoint(instanceId + 2);
+
+            segmentDirection = p1 - p0;
+
+            segmentLength = length(segmentDirection);
+            segmentDirection = normalize(segmentDirection);
+
+            const float2 dirNormal = float2(-segmentDirection.y, segmentDirection.x);
+
+            // Modifigation for gluing with prev segment:
+            const float2 prevPoint = GetChainPoint(instanceId + 0);
+            const float2 prevDir = normalize(p0 - prevPoint);
+            const float2 prevNormal = float2(-prevDir.y, prevDir.x);
+            const float prevMod = CalculateModificationFactor(normalize(prevNormal + dirNormal), dirNormal) * objectPosition.z;
+
+            // Modifigation for gluing with next segment:
+            const float2 nextPoint = GetChainPoint(instanceId + 3);
+            const float2 nextDir = normalize(nextPoint - p1);
+            const float2 nextNormal = float2(-nextDir.y, nextDir.x);
+            const float nextMod = CalculateModificationFactor(dirNormal, normalize(dirNormal + nextNormal)) * objectPosition.z;
+
+            const float2 sideDir = objectPosition.y > 0.0 ? nextDir : prevDir;
+            const bool blendDir = (chunkLength * 0.5 - abs(objectPosition.y)) < DIR_BLENDING_EPS;
+
+            objectPosition.y *= segmentLength / chunkLength;
+            objectPosition.y += objectPosition.y > 0.0 ? -nextMod : prevMod;
+            objectPosition.yz = Rotate(objectPosition.yz, segmentDirection.y, segmentDirection.x);
+            objectPosition.yz += (p0 + p1) * 0.5;
+            
+            segmentDirection = blendDir ? (segmentDirection + sideDir) * 0.5 : segmentDirection;
+        #endif
+
+        worldPosition = mul(objectPosition, worldMatrix);
+        #if NEEDS_LOCAL_POSITION
+            #if INSTANCED_CHAIN
+                localPosition = objectPosition.xyz;
+            #else
+                localPosition = input.position.xyz;
+            #endif
+        #endif
+    }
+    #endif
+}
+#endif
+output.position = mul(worldPosition, viewProjMatrix);

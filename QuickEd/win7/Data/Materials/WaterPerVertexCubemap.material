@@ -1,0 +1,20 @@
+Material:
+    Layers: [ OpaqueRenderLayer ]
+    Shader: ~res:/Materials/Shaders/Default/water
+    UniqueDefines: []
+    RenderState:
+        depthTest: true
+        depthWrite: true
+        cullMode: FACE_BACK
+        depthFunc: CMP_LESS
+    Passes:
+        ReflectionRefraction:
+            enabled: false
+        Forward:
+        DepthOnly:
+            ConsiderOnlyDefines: [ SOFT_SKINNING, HARD_SKINNING, WIND_ANIMATION, WAVE_ANIMATION, WATER_RENDER_OBJECT, WATER_TESSELLATION, WATER_DEFORMATION ]
+        ShadowMap:
+            enabled: false
+    Presets:
+        DebugColorUnlit:
+            UniqueDefines: [ DEBUG_UNLIT ]

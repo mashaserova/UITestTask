@@ -1,0 +1,89 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+[material][a] property float2 floraWaveDurationPushTrail;
+
+[material][a] property float4x4 floraWavesCenterRadius;
+[material][a] property float4 floraWavesMaxRadius;
+[material][a] property float4 floraWavesAmplitude;
+[material][a] property float4 floraWavesDuration;
+[material][a] property float4 floraWavesDamping;
+[material][a] property float4 floraWavesSpeed;
+
+
+__forceinline half3 CalculateSingleWaveAnimation(half3 worldPos, half4 waveCenterRadius, 
+    half waveMaxRadius, half waveAmplitude, half waveDuration, half waveDamping, half waveSpeed)
+{
+    half3 waveDirection = worldPos - waveCenterRadius.xyz;
+    half waveDistance = half(length(float3(waveDirection)));
+    waveDirection /= waveDistance;
+
+    waveAmplitude *= half(1.0) - min(waveDamping * waveDistance, half(1.0));
+
+    half wavePushDuration = half(floraWaveDurationPushTrail.x) * waveDuration;
+    half waveTrailDuration = half(floraWaveDurationPushTrail.y) * waveDuration;
+    
+    half waveDeltaTime = (waveCenterRadius.w - waveDistance) / waveSpeed;
+
+    half wavePush = waveDeltaTime / wavePushDuration;
+    half waveTrail = (waveDeltaTime - wavePushDuration) / waveTrailDuration;
+    half waveFalloff = half(1.0) - min(waveTrail, half(1.0));
+    
+    half wavePhase = wavePush < half(1.0) ? (wavePush * _PI_05) : (waveTrail * _PI_25 + _PI_05);
+
+    half wave = sin(wavePhase) * waveAmplitude * waveFalloff;
+
+    waveDirection.z = min(waveDirection.z, half(0.0));
+    waveDirection.z *= step(half(0.0), wave);
+
+    half3 singleWaveAnimation = waveDirection * wave * step(waveDistance, min(waveCenterRadius.w, waveMaxRadius));
+
+    return singleWaveAnimation;
+}
+
+__forceinline half3 CalculateWaveAnimation(half3 worldPos)
+{
+    half4 waveCenterRadius = half4(floraWavesCenterRadius[0]);
+    half waveMaxRadius = half(floraWavesMaxRadius[0]);
+    half waveAmplitude = half(floraWavesAmplitude[0]);
+    half waveDuration = half(floraWavesDuration[0]);
+    half waveDamping = half(floraWavesDamping[0]);
+    half waveSpeed = half(floraWavesSpeed[0]);
+
+    half3 waveAnimation = CalculateSingleWaveAnimation(worldPos, waveCenterRadius, 
+        waveMaxRadius, waveAmplitude, waveDuration, waveDamping, waveSpeed);
+
+    waveCenterRadius = half4(floraWavesCenterRadius[1]);
+    waveMaxRadius = half(floraWavesMaxRadius[1]);
+    waveAmplitude = half(floraWavesAmplitude[1]);
+    waveDuration = half(floraWavesDuration[1]);
+    waveDamping = half(floraWavesDamping[1]);
+    waveSpeed = half(floraWavesSpeed[1]);
+    
+    waveAnimation += CalculateSingleWaveAnimation(worldPos, waveCenterRadius, 
+        waveMaxRadius, waveAmplitude, waveDuration, waveDamping, waveSpeed);
+
+    waveCenterRadius = half4(floraWavesCenterRadius[2]);
+    waveMaxRadius = half(floraWavesMaxRadius[2]);
+    waveAmplitude = half(floraWavesAmplitude[2]);
+    waveDuration = half(floraWavesDuration[2]);
+    waveDamping = half(floraWavesDamping[2]);
+    waveSpeed = half(floraWavesSpeed[2]);
+    
+    waveAnimation += CalculateSingleWaveAnimation(worldPos, waveCenterRadius, 
+        waveMaxRadius, waveAmplitude, waveDuration, waveDamping, waveSpeed);
+
+    waveCenterRadius = half4(floraWavesCenterRadius[3]);
+    waveMaxRadius = half(floraWavesMaxRadius[3]);
+    waveAmplitude = half(floraWavesAmplitude[3]);
+    waveDuration = half(floraWavesDuration[3]);
+    waveDamping = half(floraWavesDamping[3]);
+    waveSpeed = half(floraWavesSpeed[3]);
+    
+    waveAnimation += CalculateSingleWaveAnimation(worldPos, waveCenterRadius, 
+        waveMaxRadius, waveAmplitude, waveDuration, waveDamping, waveSpeed);
+
+    return waveAnimation;
+}
+

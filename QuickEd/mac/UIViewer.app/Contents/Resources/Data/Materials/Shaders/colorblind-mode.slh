@@ -1,0 +1,82 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+[material][a] property float2 abnormalHueValues = float2(0.0, 0.3);
+[material][a] property float2 abnormalHuePaddings = float2(0.1, 0.01);
+[material][a] property float2 abnormalHueFadeOuts = float2(0.05, 0.01);
+[material][a] property float2 abnormalHueShifts = float2(0.66, 0.9);
+
+inline float3 RGBtoHCV(in float3 RGB)
+{
+    // Based on work by Sam Hocevar and Emil Persson
+    float4 P = (RGB.g < RGB.b) ? float4(RGB.bg, -1.0, 2.0 / 3.0) : float4(RGB.gb, 0.0, -1.0 / 3.0);
+    float4 Q = (RGB.r < P.x) ? float4(P.xyw, RGB.r) : float4(RGB.r, P.yzx);
+    float C = Q.x - min(Q.w, Q.y);
+    float H = abs((Q.w - Q.y) / (6.0 * C + 1e-5) + Q.z);
+
+    return float3(H, C, Q.x);
+}
+
+inline float3 RGBtoHSL(float3 RGB)
+{
+    float3 HCV;
+    HCV = RGBtoHCV(RGB);
+
+    float L = HCV.z - HCV.y * 0.5;
+    float S = HCV.y / (1.0 - abs(L * 2.0 - 1.0) + 1e-5);
+    
+    return float3(HCV.x, S, L);
+}
+
+inline float3 HUEtoRGB(float H)
+{
+    float R = abs(H * 6.0 - 3.0) - 1.0;
+    float G = 2.0 - abs(H * 6.0 - 2.0);
+    float B = 2.0 - abs(H * 6.0 - 4.0);
+
+    return saturate(float3(R, G, B));
+}
+
+inline float3 HSLtoRGB(float3 HSL)
+{
+    float3 RGB;
+    RGB = HUEtoRGB(HSL.x);
+
+    float C = (1.0 - abs(2.0 * HSL.z - 1.0)) * HSL.y;
+
+    return saturate((RGB - 0.5) * C + HSL.z);
+}
+
+inline float3 ShiftAbnormalHue(float3 source)
+{
+    float3 hsl;
+    hsl = RGBtoHSL(source);
+
+    float2 hueDeltas = abs(abnormalHueValues - hsl.x);
+    hueDeltas.x = min(hueDeltas.x, 1.0 - hueDeltas.x);
+    hueDeltas.y = min(hueDeltas.y, 1.0 - hueDeltas.y);
+    
+    const float2 abnormalHueFactors = 1.0 - smoothstep(abnormalHuePaddings, abnormalHuePaddings + abnormalHueFadeOuts, hueDeltas);
+
+    const float abnormalHueShift = hueDeltas.x < hueDeltas.y ? abnormalHueShifts.x : abnormalHueShifts.y;
+    const float abnormalHueFactor = hueDeltas.x < hueDeltas.y ? abnormalHueFactors.x : abnormalHueFactors.y;
+
+    float3 result = hsl;
+    result.x += abnormalHueShift;
+    result.x = frac(result.x);
+    result = HSLtoRGB(result);
+
+    result = lerp(source, result, abnormalHueFactor);
+
+    return result;
+}
+
+inline float3 ApplyColorblindMode(float3 source)
+{
+    float3 result;
+
+    result = ShiftAbnormalHue(source);
+
+    return result;
+}

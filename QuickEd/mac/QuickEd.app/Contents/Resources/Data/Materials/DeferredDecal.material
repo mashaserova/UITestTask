@@ -1,0 +1,47 @@
+Material:
+    Layers: [ StaticDecalRenderLayer ]
+    Shader: ~res:/Materials/Shaders/Default/deferred-decal
+    RenderState:
+        blend: true
+        depthTest: true
+        depthWrite: false
+        depthFunc: CMP_LEQUAL
+        cullMode: FACE_BACK
+    UniqueDefines:
+        - [ BLENDING, 1 ]
+    Passes:
+        Forward:
+            Stencil:
+                dynamicOverrideAllowed: true
+        DepthOnly:
+            enabled: false
+        ReflectionRefraction:
+            enabled: false
+        FloraLaying:
+            RenderState:
+                blend: false
+                depthWrite: true
+                depthFunc: CMP_GREATER
+                cullMode: FACE_FRONT
+    Presets:
+        Additive:
+            UniqueDefines:
+                - [ BLENDING, 3 ]
+        Multiplicative:
+            UniqueDefines:
+                - [ BLENDING, 5 ]
+        Debug:
+            RenderState:
+                depthWrite: true
+            UniqueDefines:
+                - [ BLENDING, 1 ]
+                - [ DECAL_DEBUG, 1 ]
+        DynamicDecalLayer:
+            Layers: [ DynamicDecalRenderLayer ]
+        ForceVegetationLayer:
+            Layers: [ VegetationRenderLayer ]
+        CullFrontDepthGreater:
+            RenderState:
+                cullMode: FACE_FRONT
+                depthFunc: CMP_GREATER
+             

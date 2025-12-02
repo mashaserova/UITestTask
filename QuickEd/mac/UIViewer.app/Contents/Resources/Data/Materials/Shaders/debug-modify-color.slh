@@ -1,0 +1,18 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+#if (VIEW_MODE_OVERDRAW_HEAT || DEBUG_UNLIT) && !DRAW_DEPTH_ONLY
+    output.color *= float4(0.0f, 0.0f, 0.0f, 0.0f);
+    
+    #if DEBUG_UNLIT
+        output.color += debugFlatColor;
+    #elif VIEW_MODE_OVERDRAW_HEAT
+        #if ALPHABLEND
+            output.color.r += 0.1f;
+        #endif
+        #if ALPHATEST
+            output.color.g += 0.1f;
+        #endif
+    #endif
+#endif

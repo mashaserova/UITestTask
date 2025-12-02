@@ -1,0 +1,268 @@
+Header:
+    version: 160
+Prototypes:
+-   class: "UIControl"
+    name: "MyTask"
+    size: [1024.0, 768.0]
+    
+    # --- 1. ОБЪЯВЛЯЕМ ПЕРЕМЕННЫЕ (DATA) ---
+    components:
+        SizePolicy:
+            horizontalPolicy: "PercentOfParent"
+            verticalPolicy: "PercentOfParent"
+        # Здесь мы создаем переменную "PriceText", которую будем менять из кода игры
+        UIDataParamsComponent:
+            params:
+            - ["string", "PriceText", "\"\"", "\"КУПИТЬ ЗА 5.99\""] 
+            # "КУПИТЬ ЗА 5.99" — это значение по умолчанию
+
+    children:
+    # --- ФОН (Темный) ---
+    -   class: "UIControl"
+        name: "BgLayer"
+        size: [100.0, 100.0]
+        components:
+            Background:
+                drawType: "DRAW_FILL"
+                color: [0.05, 0.05, 0.05, 0.9] # Темный фон
+            SizePolicy:
+                horizontalPolicy: "PercentOfParent"
+                verticalPolicy: "PercentOfParent"
+
+    # --- ЗАГОЛОВОК ЭКРАНА (Сверху) ---
+    -   class: "UIControl"
+        name: "ScreenTitle"
+        size: [400.0, 50.0]
+        components:
+            Anchor:
+                hCenterAnchorEnabled: true
+                topAnchorEnabled: true
+                topOffset: 30.0
+            # Компонент Текста
+            UITextComponent:
+                fontPath: "~res:/UI/Fonts/HelveticaNeueWorld-75Bold.ttf"
+                fontSize: 32.0
+                lineHeight: 32.0
+                color: [1.0, 1.0, 1.0, 1.0] # Белый цвет
+                text: "ЛАВКА ЧУДЕС"          # Сам текст
+            SizePolicy:
+                horizontalPolicy: "PercentOfContent"
+                verticalPolicy: "PercentOfContent"
+
+    # --- ЦЕНТРАЛЬНОЕ ОКНО ---
+    -   class: "UIControl"
+        name: "ShopWindow"
+        size: [1000.0, 600.0]
+        components:
+            Anchor:
+                hCenterAnchorEnabled: true
+                vCenterAnchorEnabled: true
+            
+        children:
+        # --- ЛЕВАЯ КОЛОНКА (Товары) ---
+        -   class: "UIControl"
+            name: "LeftPanel"
+            size: [650.0, 600.0]
+            components:
+                Anchor:
+                    leftAnchorEnabled: true
+                    topAnchorEnabled: true
+                    bottomAnchorEnabled: true
+                    leftOffset: 40.0 # Отступ от левого края экрана
+                
+                # ПРОЗРАЧНЫЙ ФОН (Убираем серый цвет)
+                Background:
+                    drawType: "DRAW_FILL"
+                    color: [0.0, 0.0, 0.0, 0.0] 
+
+                SizePolicy:
+                    horizontalPolicy: "PercentOfParent"
+                    horizontalValue: 60.0
+                    verticalPolicy: "PercentOfParent"
+                
+                # --- МАГИЯ СЕТКИ ---
+                FlowLayout:
+                    hSpacing: 20.0 # Расстояние между карточками по горизонтали
+                    vSpacing: 20.0 # Расстояние по вертикали
+                    hPadding: "10" # Отступы внутри контейнера
+                    vPadding: "10"
+            
+            # Вставляем карточки (Танки)
+            children:
+            # КАРТОЧКА 1
+            -   class: "UIControl"
+                name: "TankCard_1"
+                size: [280.0, 200.0] # Примерный размер карточки
+                components:
+                    SizePolicy:
+                        horizontalPolicy: "FixedSize"
+                        verticalPolicy: "FixedSize"
+                    # Подключаем внешний файл карточки
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"T-34\"" # Передаем имя танка в карточку
+
+            # КАРТОЧКА 2
+            -   class: "UIControl"
+                name: "TankCard_2"
+                size: [280.0, 200.0]
+                components:
+                    SizePolicy:
+                        horizontalPolicy: "FixedSize"
+                        verticalPolicy: "FixedSize"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"Tiger\""
+
+            # КАРТОЧКА 3
+            -   class: "UIControl"
+                name: "TankCard_3"
+                size: [280.0, 200.0]
+                components:
+                    SizePolicy:
+                        horizontalPolicy: "FixedSize"
+                        verticalPolicy: "FixedSize"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"KV-1\""
+            
+            # КАРТОЧКА 4
+            -   class: "UIControl"
+                name: "TankCard_4"
+                size: [280.0, 200.0]
+                components:
+                    SizePolicy:
+                        horizontalPolicy: "FixedSize"
+                        verticalPolicy: "FixedSize"
+                    UIChildComponent0:
+                        prototypePath: "~res:/UI/Example/ExampleItem.yaml"
+                        args:
+                            "name": "\"Sherman\""
+
+        # --- ПРАВАЯ КОЛОНКА (Инфо) ---
+        -   class: "UIControl"
+            name: "RightPanel"
+            size: [350.0, 600.0]
+            components:
+                Anchor:
+                    rightAnchorEnabled: true
+                    topAnchorEnabled: true
+                    bottomAnchorEnabled: true
+                Background:
+                    drawType: "DRAW_FILL"
+                    color: [0.15, 0.15, 0.15, 1.0] # Темно-серый
+                SizePolicy:
+                    horizontalPolicy: "PercentOfParent"
+                    horizontalValue: 35.0
+                    verticalPolicy: "PercentOfParent"
+            
+            children:
+            # Название танка
+            -   class: "UIControl"
+                name: "TankTitle"
+                size: [300.0, 60.0]
+                components:
+                    Anchor:
+                        topAnchorEnabled: true
+                        topOffset: 30.0
+                        hCenterAnchorEnabled: true
+                    UITextComponent:
+                        fontPath: "~res:/UI/Fonts/HelveticaNeueWorld-75Bold.ttf"
+                        fontSize: 28.0
+                        lineHeight: 30.0
+                        color: [1.0, 0.8, 0.2, 1.0] # Золотистый цвет
+                        text: "Лучшие танки\nвойны"
+                        align: "CENTER"
+                    SizePolicy:
+                        horizontalPolicy: "PercentOfContent"
+                        verticalPolicy: "PercentOfContent"
+
+            # --- ЗЕЛЕНАЯ КНОПКА ---
+            -   class: "UIControl"
+                name: "BuyButton"
+                size: [300.0, 60.0]
+                components:
+                    Anchor:
+                        bottomAnchorEnabled: true
+                        bottomOffset: 30.0
+                        hCenterAnchorEnabled: true
+                    Background:
+                        drawType: "DRAW_FILL"
+                        color: [0.3, 0.7, 0.2, 1.0] # Зеленый
+            
+                children:
+                # Текст внутри кнопки (С БИНДИНГОМ!)
+                -   class: "UIControl"
+                    name: "ButtonLabel"
+                    size: [100.0, 30.0]
+                    components:
+                        Anchor:
+                            hCenterAnchorEnabled: true
+                            vCenterAnchorEnabled: true
+                        UITextComponent:
+                            fontPath: "~res:/UI/Fonts/HelveticaNeueWorld-75Bold.ttf"
+                            fontSize: 20.0
+                            color: [0.0, 0.0, 0.0, 1.0]
+                        SizePolicy:
+                            horizontalPolicy: "PercentOfContent"
+                            verticalPolicy: "PercentOfContent"
+                    
+                    # ВОТ ОНА — СВЯЗЬ С ЛОГИКОЙ
+                    bindings:
+                    - ["UITextComponent.text", "PriceText"]
+            
+# --- КРЕСТИК (Закрыть) ---
+    -   class: "UIControl"
+        name: "CloseButton"
+        size: [40.0, 40.0]
+        components:
+            Anchor:
+                leftAnchorEnabled: true
+                topAnchorEnabled: true
+                leftOffset: 30.0
+                topOffset: 30.0
+            Background:
+                drawType: "DRAW_FILL"
+                color: [0.8, 0.2, 0.2, 0.8] # Пока красный квадрат, потом заменим на иконку
+            SizePolicy:
+                horizontalPolicy: "FixedSize"
+                verticalPolicy: "FixedSize"
+
+    # --- СОЦСЕТИ (Внизу) ---
+    -   class: "UIControl"
+        name: "SocialPanel"
+        size: [120.0, 50.0]
+        components:
+            Anchor:
+                bottomAnchorEnabled: true
+                hCenterAnchorEnabled: true
+                bottomOffset: 20.0
+            
+        children:
+        # VK
+        -   class: "UIControl"
+            name: "VK_Icon"
+            size: [40.0, 40.0]
+            components:
+                Anchor:
+                    leftAnchorEnabled: true
+                    vCenterAnchorEnabled: true
+                Background:
+                    drawType: "DRAW_FILL"
+                    color: [0.0, 0.5, 1.0, 1.0] # Синий квадрат (VK)
+        # YouTube
+        -   class: "UIControl"
+            name: "YT_Icon"
+            size: [40.0, 40.0]
+            components:
+                Anchor:
+                    rightAnchorEnabled: true
+                    vCenterAnchorEnabled: true
+                Background:
+                    drawType: "DRAW_FILL"
+                    color: [1.0, 0.0, 0.0, 1.0] # Красный квадрат (YT)
+
+  

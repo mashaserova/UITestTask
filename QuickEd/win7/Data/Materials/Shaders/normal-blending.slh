@@ -1,0 +1,34 @@
+half3 NormalBlendLinear(half3 n1, half3 n2)
+{
+    return normalize(n1 + n2);
+}
+
+half3 NormalBlendOverlay(half3 n1, half3 n2)
+{
+    half3 r = n1 < half(0.5) ? half(2.0) * n1 * n2 : half(1.0) - half(2.0) * (half(1.0) - n1) * (half(1.0) - n2);
+    return normalize(r * half(2.0) - half(1.0));
+}
+
+half3 NormalBlendPartialDerivative(half3 n1, half3 n2)
+{
+    return normalize(half3(n1.xy*n2.z + n2.xy*n1.z, n1.z*n2.z));
+}
+
+half3 NormalBlendWhiteout(half3 n1, half3 n2)
+{
+    return normalize(half3(n1.xy + n2.xy, n1.z*n2.z));
+}
+
+half3 NormalBlendUDN(half3 n1, half3 n2)
+{
+    return normalize(half3(n1.xy + n2.xy, n1.z));
+}
+
+half3 NormalBlendUnity(half3 n1, half3 n2)
+{
+    half3x3 nBasis = half3x3(
+        half3(n1.z, n1.y, -n1.x), // +90 degree rotation around y axis
+        half3(n1.x, n1.z, -n1.y), // -90 degree rotation around x axis
+        half3(n1.x, n1.y,  n1.z));
+    return normalize(n2.x * nBasis[0] + n2.y * nBasis[1] + n2.z * nBasis[2]);
+}

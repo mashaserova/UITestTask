@@ -1,0 +1,23 @@
+Material:
+    Layers: [ ShadowVolumeRenderLayer ]
+    Shader: ~res:/Materials/Shaders/Default/materials
+    ConsiderOnlyDefines: [ HARD_SKINNING, FORCED_SHADOW_DIRECTION ]
+    RenderState:
+        depthFunc: CMP_LEQUAL
+        depthTest: true
+    Passes:
+        Forward:
+            enabled:
+                false
+        ForwardWithDepthOnly:
+            enabled:
+                false
+        ReflectionRefraction:
+            enabled:
+                false
+        DepthOnly:
+            enabled:
+                false
+        ShadowMap:
+            enabled:
+                false

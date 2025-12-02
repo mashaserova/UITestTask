@@ -1,0 +1,21 @@
+#if DECAL_TEXTURE_COUNT > 1
+    #if HARD_SKINNING
+        #if PIXEL_LIT
+            half index = input.varToLightVec.w;
+        #else
+            half index = input.varDiffuseColor.w;
+        #endif
+    #else   
+        half index = half(0.0);
+    #endif
+    half4 tileColor1 = half4(tex2D(decalTexture1, input.varTexCoord0.zw).rgba * decalTileColor1);
+    tileColor = lerp(tileColor, tileColor1, saturate(index));
+#endif
+#if DECAL_TEXTURE_COUNT > 2
+    half4 tileColor2 = half4(tex2D(decalTexture2, input.varTexCoord0.zw).rgba * decalTileColor2);
+    tileColor = lerp(tileColor, tileColor2, saturate(index - half(1.0)));
+#endif
+#if DECAL_TEXTURE_COUNT > 3
+    half4 tileColor3 = half4(tex2D(decalTexture3, input.varTexCoord0.zw).rgba * decalTileColor3);
+    tileColor = lerp(tileColor, tileColor3, saturate(index - half(2.0)));
+#endif

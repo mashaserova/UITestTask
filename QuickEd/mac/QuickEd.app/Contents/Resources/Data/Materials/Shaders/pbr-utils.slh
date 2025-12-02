@@ -1,0 +1,110 @@
+#if !defined(COMMON_INCLUDED)
+#error "Include common.slh"
+#endif
+
+inline half3 F_Schlick(half3 f0, half NdotL)
+{
+#if SHADER_ULTRA
+    return half3(f0 + half3(half(1.0) - f0) * (pow(half(1.0) - NdotL, half(5.0))));
+#else
+    half f = exp2(half(-5.55473) * NdotL * NdotL - half(6.98316) * NdotL);
+    return f0 * (half(1.0) - f) + f;
+#endif
+}
+
+half3 EnvBRDFApprox(half3 f0, half roughness, half NoV)
+{
+    const half4 c0 = half4(-1, -0.0275, -0.572, 0.022);
+    const half4 c1 = half4( 1,  0.0425,  1.04, -0.04);
+    half4 r = roughness * c0 + c1;
+    half a004 = min(r.x * r.x, exp2(NoV * half(-9.28))) * r.x + r.y;
+    half2 AB = half2(-1.04, 1.04) * a004 + r.zw;
+    return f0 * AB.x + AB.y;
+}
+
+float D_GGX(float NdotH, float roughness)
+{
+    float a = roughness * roughness; // remapping
+
+    float a2 = a * a;
+
+    float f = (NdotH * a2 - NdotH) * NdotH + 1.0;
+    return a2 / (_PI * f * f);
+}
+
+float V_SmithGGXCorrelated(float NdotL, float NdotV, float roughness)
+{
+    float a2 = roughness * roughness;
+    float Lambda_GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - a2) + a2);
+    float Lambda_GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - a2) + a2);
+    return 0.5 / (Lambda_GGXV + Lambda_GGXL);
+}
+
+float V_SmithGGXCorrelatedFast(float NdotV, float NdotL, float roughness)
+{
+    float a = roughness;
+    float GGXV = NdotL * (NdotV * (1.0 - a) + a);
+    float GGXL = NdotV * (NdotL * (1.0 - a) + a);
+    return 0.5 / (GGXV + GGXL);
+}
+
+float V_SmithGGXCorrelatedFast2(float NdotV, float NdotL, float roughness)
+{
+    float a = roughness;
+    float det = lerp(2.0 * NdotL * NdotV, NdotL + NdotV, a);
+    return 0.5 / det;
+}
+
+float G_SmithGGXCorrelated(float NdotL, float NdotV, float a2)
+{
+    float NdotL2 = NdotL * NdotL;
+    float NdotV2 = NdotV * NdotV;
+    float lambdaV = float(-1.0 + sqrt(a2 * (1.0 - NdotL2) / NdotL2 + 1.0)) * 0.5;
+    float lambdaL = float(-1.0 + sqrt(a2 * (1.0 - NdotV2) / NdotV2 + 1.0)) * 0.5;
+    return 1.0 / (1.0 + lambdaV + lambdaL);
+}
+
+float G_SmithGGX_1(float NdotV, float a2)
+{
+    return 2.0 * NdotV / (NdotV + sqrt(a2 + (1.0 - a2) * NdotV * NdotV ));
+}
+
+float G_SmithGGX(float NdotL, float NdotV, float a2)
+{
+    return G_SmithGGX_1(NdotL, a2) * G_SmithGGX_1(NdotV, a2);
+}
+
+
+float3 Specular(float NdotH, float NdotL, float NdotV, float roughness)
+{
+    float alpha = roughness * roughness; //remapping
+
+    float alpha2 = alpha * alpha;
+    float D = D_GGX(NdotH, roughness);
+    //float V = V_SmithGGXCorrelated(NdotL, NdotV, max(alpha2, 0.0001));
+    //float V = G_SmithGGXCorrelated(NdotL, NdotV, alpha2) * 0.25 / NdotV;
+    float V = G_SmithGGX(NdotL, NdotV, alpha2) * 0.25 / NdotV;
+
+    return D * V;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float a = roughness;
+    float k = a / 2.0;
+
+    float nom   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
+}
+
+float GeometrySmith(float NdotV, float NdotL, float roughness)
+{
+    roughness = roughness * roughness; //remapping
+
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
