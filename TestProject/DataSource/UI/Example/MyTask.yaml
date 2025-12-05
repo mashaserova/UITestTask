@@ -3,7 +3,7 @@ Header:
 Prototypes:
 -   class: "UIControl"
     name: "MyTask"
-    size: [1103.000000, 768.000000]
+    size: [1195.000000, 768.000000]
     components:
         SizePolicy:
             horizontalPolicy: "PercentOfParent"
@@ -14,7 +14,7 @@ Prototypes:
     children:
     -   class: "UIControl"
         name: "BgLayer"
-        size: [100.000000, 100.000000]
+        size: [1195.000000, 768.000000]
         components:
             Background:
                 drawType: "DRAW_STRETCH_BOTH"
@@ -41,6 +41,7 @@ Prototypes:
                 verticalPolicy: "PercentOfContent"
     -   class: "UIControl"
         name: "ShopWindow"
+        position: [97.000000, 84.000000]
         size: [1000.000000, 600.000000]
         components:
             Anchor:
@@ -177,8 +178,8 @@ Prototypes:
         size: [40.000000, 40.000000]
         components:
             Background:
-                drawType: "DRAW_STRETCH_BOTH"
-                color: [1.0, 1.0]
+                drawType: "DRAW_FILL"
+                color: [0.800000, 0.200000, 0.200000, 0.800000]
             Anchor:
                 leftAnchorEnabled: true
                 topAnchorEnabled: true
@@ -187,31 +188,58 @@ Prototypes:
                 verticalPolicy: "FixedSize"
     -   class: "UIControl"
         name: "SocialPanel"
-        size: [120.000000, 50.000000]
+        size: [140.0, 60.0]
         components:
             Anchor:
                 hCenterAnchorEnabled: true
                 bottomAnchorEnabled: true
+                bottomOffset: 25.0
         children:
         -   class: "UIControl"
-            name: "VK_Icon"
-            size: [40.000000, 40.000000]
+            name: "VK_Container"
+            size: [48.0, 48.0]
             components:
-                Background:
-                    drawType: "DRAW_ALIGNED"
-                    sprite: "~res:/Gfx/social/vk.png"
-                    color: [1.000000, 1.000000, 1.000000, 1.000000]
-                    align: []
                 Anchor:
                     leftAnchorEnabled: true
                     vCenterAnchorEnabled: true
+                    leftOffset: 10.0
+            children:
+            -   class: "UIControl"
+                name: "VK_Image"
+                size: [44.0, 44.0]
+                components:
+                    Anchor:
+                        hCenterAnchorEnabled: true 
+                        vCenterAnchorEnabled: true
+                    Background:
+                        drawType: "DRAW_SCALE_PROPORTIONAL"
+                        sprite: "~res:/Gfx/social/vk.png"
+                        color: [1.0, 1.0, 1.0, 1.0]
+                        filterMode: "LINEAR"
         -   class: "UIControl"
-            name: "YT_Icon"
-            size: [40.000000, 40.000000]
+            name: "YT_Container"
+            size: [50.0, 50.0]
             components:
-                Background:
-                    drawType: "DRAW_FILL"
-                    color: [1.000000, 0.000000, 0.000000, 1.000000]
                 Anchor:
                     rightAnchorEnabled: true
                     vCenterAnchorEnabled: true
+                    rightOffset: 10.0
+            
+            children:
+            -   class: "UIControl"
+                name: "YT_Image"
+                size: [44.0, 44.0]
+                components:
+                    Anchor:
+                        hCenterAnchorEnabled: true
+                        vCenterAnchorEnabled: true
+                    Background:
+                        drawType: "DRAW_SCALE_PROPORTIONAL"
+                        sprite: "~res:/Gfx/social/youtube.png"
+                        color: [1.0, 1.0, 1.0, 1.0]
+                        filterMode: "LINEAR"
+CustomData:
+    Guides:
+        MyTask:
+            Vertical:
+            - 932.000000
